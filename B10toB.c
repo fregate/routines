@@ -1,3 +1,6 @@
+// according to ANSI C standart this usage of union is not recommended... but its beautiful )
+// base to base number conversion without any additional variables and memory allocation... wonderful isn't it?
+
 struct toO
 {
   union {
@@ -77,3 +80,24 @@ struct toO
 		} b8;
 	};
 };
+
+int main(int argc, char* argv[])
+{
+	int s = sizeof(toO);
+	toO X;
+	X.x = 0x0123456701234567;
+	
+	X.b64.o00 = 0x3F; // or 0xFF
+	X.b64.o01 = 0x3F;
+	X.b64.o02 = 0x3F;
+	X.b64.o03 = 0x3F;
+	X.b64.o04 = 0x3F;
+	X.b64.o05 = 0x3F;
+	X.b64.o06 = 0x3F;
+	X.b64.o07 = 0x3F;
+	X.b64.o08 = 0x3F;
+	X.b64.o09 = 0x3F;
+	X.b64.o10 = 0x3F;
+	
+	// X.x == MAX_UINT64
+}
