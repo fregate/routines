@@ -321,7 +321,86 @@ int _tmain(int argc, _TCHAR* argv[])
 		, std::accumulate(v_ranlux4.t2.begin(), v_ranlux4.t2.end(), 0.0f) / trou
 		);
 
-//	getch();
-
 	return 0;
 }
+
+/* ================= results ========================
+==== minstd_rand ====
+average generation 0.28700
+max time 4
+min time 0
+initialization 0.41100
+
+==== minstd_rand0 ====
+average generation 0.24200
+max time 2
+min time 0
+initialization 0.31800
+
+==== rand48 ====
+average generation 0.17500
+max time 2
+min time 0
+initialization 0.26000
+
+==== ecuyer1988 ====
+average generation 0.13500
+max time 1
+min time 0
+initialization 0.22200
+
+==== kreutzer1986 ====
+average generation 0.20600
+max time 2
+min time 0
+initialization 10.27600
+
+==== taus88 ====
+average generation 0.16600
+max time 1
+min time 0
+initialization 0.56200
+
+==== hellekalek1995 ====
+average generation 0.56700
+max time 1
+min time 0
+initialization 0.65500
+
+==== mt11213b ====
+average generation 2.50200
+max time 8
+min time 2
+initialization 9.87800
+
+==== mt19937 ====
+average generation 4.32600
+max time 17
+min time 4
+initialization 17.12300
+
+==== lagged_fibonacci607 ====
+average generation 10.64900
+max time 593
+min time 8
+initialization 93.95800
+
+==== lagged_fibonacci44497 ====
+average generation 913.64100
+max time 1219
+min time 751
+initialization 6991.02600
+
+==== ranlux3 ====
+average generation 0.23900
+max time 1
+min time 0
+initialization 3.52100
+
+==== ranlux4 ====
+average generation 0.25700
+max time 15
+min time 0
+initialization 3.39600
+
+*/
