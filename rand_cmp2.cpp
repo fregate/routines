@@ -1,5 +1,5 @@
-// ttt.cpp : Defines the entry point for the console application.
-//
+// test default and new (std::tr1) random engines
+// if remove wrappers (virtual functions exactly) in will be faster at all
 
 #include "stdafx.h"
 
@@ -14,7 +14,7 @@ using namespace std;
 volatile bool done = false;
 
 template <unsigned int D>
-int d_re(const unsigned __int64& rn)
+int d_re(const unsigned __int64& rn) // roll dice with D edges (cut input in range, in fact)
 {
 	if(D)
 	{
