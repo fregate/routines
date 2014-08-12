@@ -260,4 +260,30 @@ d<ranlux48> avg               [1.15691]
 d<knuth_b> avg                [0.17827]
 d<default_random_engine> avg  [0.138237] ***
 iterations [395`853`725]
+
+d<def> avg                              [0.433816][min: 1][max: 17]
+d<minstd_rand0> avg                     [0.177613][min: 1][max: 17]
+d<minstd_rand> avg                      [0.169577][min: 1][max: 17]
+d<mt19937> avg                          [0.151529][min: 1][max: 17] **
+d<mt19937_64> avg                       [0.253063][min: 1][max: 17]
+d<ranlux24_base> avg                    [0.200032][min: 1][max: 17]
+d<ranlux48_base> avg                    [0.234577][min: 1][max: 17]
+d<ranlux24> avg                         [0.472101][min: 1][max: 17]
+d<ranlux48> avg                         [1.25102][min: 1][max: 17]
+d<knuth_b> avg                          [0.247116][min: 1][max: 17]
+d<default_random_engine> avg            [0.162573][min: 1][max: 17]
+d<boost_minstd_rand> avg                [0.17204][min: 1][max: 17]
+d<boost_minstd_rand0> avg               [0.186877][min: 1][max: 17]
+d<boost_rand48> avg                     [0.16532][min: 1][max: 17]
+d<boost_ecuyer1988> avg                 [0.212816][min: 1][max: 17]
+d<boost_hellekalek1995> avg             [0.624603][min: 1][max: 17]
+d<boost_kreutzer1986> avg               [0.144129][min: 1][max: 17] * - fastest
+d<boost_taus88> avg                     [0.161525][min: 1][max: 17]
+d<boost_mt11213b> avg                   [0.170108][min: 1][max: 17]
+d<boost_mt19937> avg                    [0.155041][min: 1][max: 17] ***
+d<boost_lagged_fibonacci607> avg        [0.319005][min: 1][max: 17]
+d<boost_lagged_fibonacci44497> avg      [0.31203][min: 1][max: 17]
+d<boost_ranlux4> avg                    [0.559111][min: 1][max: 17]
+d<boost_ranlux3> avg                    [0.413897][min: 1][max: 17]
+iterations [6`145`290]
 */
