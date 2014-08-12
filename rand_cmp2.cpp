@@ -36,13 +36,21 @@ struct re_i
 	unsigned __int64 max_re;
 	unsigned __int64 min_re;
 
+	unsigned __int64 sum2_re;
+	unsigned __int64 sum3_re;
+
 	re_i()
 		: sum_re(0)
 		, max_re(0)
 		, min_re(-1)
+		, sum2_re(0)
+		, sum3_re(0)
 	{}
 
+	virtual int get_boost_distr()  = 0;
+	virtual int get_std_distr()  = 0;
 	virtual unsigned __int64 get()  = 0;
+
 	virtual void sum(const unsigned __int64& s)
 	{
 		sum_re += s;
@@ -54,12 +62,16 @@ struct re_i
 	};
 };
 
-template <class RE>
+template <class RE, unsigned int D = 17>
 struct re : public re_i
 {
 	RE x;
+	boost::random::uniform_int_distribution<> _boost_distr;
+	uniform_int_distribution<> _std_distr;
 
 	re()
+		: _boost_distr(1, D)
+		, _std_distr(1, D)
 	{
 		x.seed(::GetTickCount());
 	}
@@ -68,6 +80,16 @@ struct re : public re_i
 	{
 		return x();
 	}
+
+	virtual int get_boost_distr()
+	{
+		return _boost_distr(x);
+	}
+
+	virtual int get_std_distr()
+	{
+		return _std_distr(x);
+	}
 };
 
 struct DefRE
@@ -75,8 +97,8 @@ struct DefRE
 
 };
 
-template<>
-struct re<DefRE> : public re_i
+template<int D>
+struct re<DefRE, D> : public re_i
 {
 	unsigned __int64 sum_re;
 
@@ -89,14 +111,28 @@ struct re<DefRE> : public re_i
 	{
 		return rand();
 	}
+
+	virtual int get_boost_distr()
+	{
+		return d_re<D>(rand());
+	}
+
+	virtual int get_std_distr()
+	{
+		return d_re<D>(rand());
+	}
 };
 
-template<> // fibbonachi random engine return double[0...1] - conversion
-struct re<boost::random::lagged_fibonacci607> : public re_i
+template<int D> // fibbonachi random engine return double[0...1] - conversion for plain function
+struct re<boost::random::lagged_fibonacci607, D> : public re_i
 {
 	boost::random::lagged_fibonacci607 x;
+	boost::random::uniform_int_distribution<> _boost_distr;
+	uniform_int_distribution<> _std_distr;
 
 	re()
+		: _boost_distr(1, D)
+		, _std_distr(1, D)
 	{
 		x.seed(::GetTickCount());
 	}
@@ -107,23 +143,71 @@ struct re<boost::random::lagged_fibonacci607> : public re_i
 	{
 		return (unsigned __int64) (x() * UINT64_MAX);
 	}
+
+	virtual int get_boost_distr()
+	{
+		return _boost_distr(x);
+	}
+
+	virtual int get_std_distr()
+	{
+		return _std_distr(x);
+	}
 };
 
-template<>
-struct re<boost::random::lagged_fibonacci44497> : public re_i
+template<int D>
+struct re<boost::random::lagged_fibonacci44497, D> : public re_i
 {
 	boost::random::lagged_fibonacci607 x;
+	boost::random::uniform_int_distribution<> _boost_distr;
+	uniform_int_distribution<> _std_distr;
+
+	re()
+		: _boost_distr(1, D)
+		, _std_distr(1, D)
+	{
+		x.seed(::GetTickCount());
+	}
+
+	virtual unsigned __int64 get()
+	{
+		return (unsigned __int64) (x() * UINT64_MAX);
+	}
+
+	virtual int get_boost_distr()
+	{
+		return _boost_distr(x);
+	}
+
+	virtual int get_std_distr()
+	{
+		return _std_distr(x);
+	}
+};
+
+template<int D>
+struct re<knuth_b, D> : public re_i // didn't work with uniform_distr
+{
+	knuth_b x;
 
 	re()
 	{
 		x.seed(::GetTickCount());
 	}
 
-	unsigned __int64 sum_re;
-
 	virtual unsigned __int64 get()
 	{
-		return (unsigned __int64) (x() * UINT64_MAX);
+		return x();
+	}
+
+	virtual int get_boost_distr()
+	{
+		return d_re<D>(x()); 
+	}
+
+	virtual int get_std_distr()
+	{
+		return d_re<D>(x());
 	}
 };
 
@@ -132,18 +216,42 @@ void re_test(const unsigned __int64& i, re_i& z, const std::string& comm)
 	LARGE_INTEGER previous;
 	LARGE_INTEGER current;
 
-	QueryPerformanceCounter(&previous);
-	unsigned __int64 x(d_re<17>(z.get()));
-	QueryPerformanceCounter(&current);
-	z.sum(current.QuadPart - previous.QuadPart);
-
-	z.max_re = z.max_re > x ? z.max_re : x;
-	z.min_re = z.min_re < x ? z.min_re : x; // check for boundary conditions
-
 	{
+		QueryPerformanceCounter(&previous);
+		unsigned __int64 x(d_re<17>(z.get()));
+		QueryPerformanceCounter(&current);
+		z.sum(current.QuadPart - previous.QuadPart);
+
+		z.max_re = z.max_re > x ? z.max_re : x;
+		z.min_re = z.min_re < x ? z.min_re : x; // check for boundary conditions
+
 		wostringstream oss;
 		oss << "d_re<" << comm.c_str() << "> info [current: " << current.QuadPart - previous.QuadPart
 			<< "][avg:" << (double) z.show() / i << "]" << endl;
+		OutputDebugString(oss.str().c_str());
+	}
+
+	{
+		QueryPerformanceCounter(&previous);
+		z.get_boost_distr();
+		QueryPerformanceCounter(&current);
+		z.sum2_re += current.QuadPart - previous.QuadPart;
+
+		wostringstream oss;
+		oss << "d_re<" << comm.c_str() << "> boost_distr info [current: " << current.QuadPart - previous.QuadPart
+			<< "][avg:" << (double) z.sum2_re / i << "]" << endl;
+		OutputDebugString(oss.str().c_str());
+	}
+
+	{
+		QueryPerformanceCounter(&previous);
+		z.get_std_distr();
+		QueryPerformanceCounter(&current);
+		z.sum3_re += current.QuadPart - previous.QuadPart;
+
+		wostringstream oss;
+		oss << "d_re<" << comm.c_str() << "> std_distr info [current: " << current.QuadPart - previous.QuadPart
+			<< "][avg:" << (double) z.sum3_re / i << "]" << endl;
 		OutputDebugString(oss.str().c_str());
 	}
 }
@@ -214,7 +322,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 #define OUTPUT_RE_STAT(c) \
-	cout << "d<" << #c << "> avg [" << (double) _##c.show() / lag << "][min: " << _##c.min_re << "][max: " << _##c.max_re << "]" << endl; 
+	cout << "d<" << #c << "> avg [" << (double) _##c.show() / lag << "][min: " << _##c.min_re << "][max: " << _##c.max_re << "] "; \
+	cout << "boost_distr avg [" << (double) _##c.sum2_re / lag << "] "; \
+	cout << "std_distr avg [" << (double) _##c.sum3_re / lag << "]" << endl; 
 
 	OUTPUT_RE_STAT(def);
 	OUTPUT_RE_STAT(minstd_rand0);
