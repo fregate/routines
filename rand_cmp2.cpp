@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include <random>
+#include <boost/random.hpp>
 
 using namespace std;
 
@@ -90,6 +91,42 @@ struct re<DefRE> : public re_i
 	}
 };
 
+template<> // fibbonachi random engine return double[0...1] - conversion
+struct re<boost::random::lagged_fibonacci607> : public re_i
+{
+	boost::random::lagged_fibonacci607 x;
+
+	re()
+	{
+		x.seed(::GetTickCount());
+	}
+
+	unsigned __int64 sum_re;
+
+	virtual unsigned __int64 get()
+	{
+		return (unsigned __int64) (x() * UINT64_MAX);
+	}
+};
+
+template<>
+struct re<boost::random::lagged_fibonacci44497> : public re_i
+{
+	boost::random::lagged_fibonacci607 x;
+
+	re()
+	{
+		x.seed(::GetTickCount());
+	}
+
+	unsigned __int64 sum_re;
+
+	virtual unsigned __int64 get()
+	{
+		return (unsigned __int64) (x() * UINT64_MAX);
+	}
+};
+
 void re_test(const unsigned __int64& i, re_i& z, const std::string& comm)
 {
 	LARGE_INTEGER previous;
@@ -124,6 +161,20 @@ int _tmain(int argc, _TCHAR* argv[])
 	re<ranlux48> _ranlux48;
 	re<knuth_b> _knuth_b;
 	re<default_random_engine> _default_random_engine;
+	
+	re<boost::random::minstd_rand> _boost_minstd_rand;
+	re<boost::random::minstd_rand0> _boost_minstd_rand0;
+	re<boost::random::rand48> _boost_rand48;
+	re<boost::random::ecuyer1988> _boost_ecuyer1988;
+	re<boost::random::hellekalek1995> _boost_hellekalek1995;
+	re<boost::random::kreutzer1986> _boost_kreutzer1986;
+	re<boost::random::taus88> _boost_taus88;
+	re<boost::random::mt11213b> _boost_mt11213b;
+	re<boost::random::mt19937> _boost_mt19937;
+	re<boost::random::lagged_fibonacci607> _boost_lagged_fibonacci607;
+	re<boost::random::lagged_fibonacci44497> _boost_lagged_fibonacci44497;
+	re<boost::random::ranlux4> _boost_ranlux4;
+	re<boost::random::ranlux3> _boost_ranlux3;
 
 	__int64 lag(0);
 
@@ -146,6 +197,20 @@ int _tmain(int argc, _TCHAR* argv[])
 		RE_TEST(ranlux48);
 		RE_TEST(knuth_b);
 		RE_TEST(default_random_engine);
+		
+		RE_TEST(boost_minstd_rand);
+		RE_TEST(boost_minstd_rand0);
+		RE_TEST(boost_rand48);
+		RE_TEST(boost_ecuyer1988);
+		RE_TEST(boost_hellekalek1995);
+		RE_TEST(boost_kreutzer1986);
+		RE_TEST(boost_taus88);
+		RE_TEST(boost_mt11213b);
+		RE_TEST(boost_mt19937);
+		RE_TEST(boost_lagged_fibonacci607);
+		RE_TEST(boost_lagged_fibonacci44497);
+		RE_TEST(boost_ranlux4);
+		RE_TEST(boost_ranlux3);
 	}
 
 #define OUTPUT_RE_STAT(c) \
@@ -162,6 +227,21 @@ int _tmain(int argc, _TCHAR* argv[])
 	OUTPUT_RE_STAT(ranlux48);
 	OUTPUT_RE_STAT(knuth_b);
 	OUTPUT_RE_STAT(default_random_engine);
+	
+	OUTPUT_RE_STAT(boost_minstd_rand);
+	OUTPUT_RE_STAT(boost_minstd_rand0);
+	OUTPUT_RE_STAT(boost_rand48);
+	OUTPUT_RE_STAT(boost_ecuyer1988);
+	OUTPUT_RE_STAT(boost_hellekalek1995);
+	OUTPUT_RE_STAT(boost_kreutzer1986);
+	OUTPUT_RE_STAT(boost_taus88);
+	OUTPUT_RE_STAT(boost_mt11213b);
+	OUTPUT_RE_STAT(boost_mt19937);
+	OUTPUT_RE_STAT(boost_lagged_fibonacci607);
+	OUTPUT_RE_STAT(boost_lagged_fibonacci44497);
+	OUTPUT_RE_STAT(boost_ranlux4);
+	OUTPUT_RE_STAT(boost_ranlux3);
+
 	cout << "iterations [" << lag << "]" << endl;
 
 	return 0;
