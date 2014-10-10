@@ -173,5 +173,53 @@ struct CCC
 	}
 };
 
+template<class T>
+void filled_rect(T* bbb, int x1, int y1, int x2, int y2, T val)
+{
+	// bbb - surface allocated buffer
+	// val - value to set
+	int const SW = 10; // dimensions of surface
+	int const SH = 10;
+	
+	if(x1 > x2)
+	{
+		int t(x1);
+		x1 = x2;
+		x2 = t;
+	}
+
+	if(y1 > y2)
+	{
+		int t(y1);
+		y1 = y2;
+		y2 = t;
+	}
+
+	if(x1 < 0)
+		x1 = 0;
+	if(y1 < 0)
+		y1 = 0;
+	if(x2 >= SW)
+		x2 = 9;
+	if(y2 >= SH)
+		y2 = 9;
+
+	int h = y2 - y1;
+	if((x2 - x1 + 1) == SW)
+	{
+	/*
+	// possible optimization:
+	if (x2-x1 + 1) == width do memset whole block
+	*/
+		memset(bbb + y1 * SW, val, SW * h * sizeof(T));
+		h = -1;
+	}
+	while(h >= 0) 
+	{
+		unsigned short* l0 = bbb + x1 + (y1 + h) * SW;
+		memset(l0, val, (x2 - x1 + 1) * sizeof(T));
+		h--;
+	}
+}
 
 #endif
