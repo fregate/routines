@@ -174,7 +174,7 @@ struct CCC
 };
 
 template<class T>
-void filled_rect(T* bbb, int x1, int y1, int x2, int y2, T val)
+void filled_rect(T* bbb, int x1, int y1, int x2, int y2, T val) // error = memset sets only (val & 0xff)
 {
 	// bbb - surface allocated buffer
 	// val - value to set
@@ -219,6 +219,75 @@ void filled_rect(T* bbb, int x1, int y1, int x2, int y2, T val)
 		unsigned short* l0 = bbb + x1 + (y1 + h) * SW;
 		memset(l0, val, (x2 - x1 + 1) * sizeof(T));
 		h--;
+	}
+}
+
+void fill_ellipse_2(byte* bbb, int xc, int yc, int a, int b)
+{			/* e(x,y) = b^2*x^2 + a^2*y^2 - a^2*b^2 */
+	int x = 0, y = b;
+	int rx = x, ry = y;
+	unsigned int width = 1;
+	unsigned int height = 1;
+	long a2 = (long)a*a, b2 = (long)b*b;
+	long crit1 = -(a2/4 + a%2 + b2);
+	long crit2 = -(b2/4 + b%2 + a2);
+	long crit3 = -(b2/4 + b%2);
+	long t = -a2*y; /* e(x+1/2,y-1/2) - (a^2+b^2)/4 */
+	long dxt = 2*b2*x, dyt = -2*a2*y;
+	long d2xt = 2*b2, d2yt = 2*a2;
+
+	if (b == 0) {
+		draw_filled_rect(bbb, xc-a, yc, xc-a + 2*a+1, yc + 1);
+		return;
+	}
+
+	while (y>=0 && x<=a) {
+		if (t + b2*x <= crit1 ||     /* e(x+1,y-1/2) <= 0 */
+			t + a2*y <= crit3) {     /* e(x+1/2,y) <= 0 */
+				if (height == 1)
+					; /* draw nothing */
+				else if (ry*2+1 > (height-1)*2) {
+					draw_filled_rect(bbb, xc-rx, yc-ry, xc-rx + width, yc-ry + height-1);
+					draw_filled_rect(bbb, xc-rx, yc+ry+1, xc-rx + width, yc+ry+1 + 1-height);
+					ry -= height-1;
+					height = 1;
+				}
+				else {
+					draw_filled_rect(bbb, xc-rx, yc-ry, xc-rx + width, yc-ry + ry*2+1);
+					ry -= ry;
+					height = 1;
+				}
+				x++, dxt += d2xt, t += dxt;
+				rx++;
+				width += 2;
+		}
+		else if (t - a2*y > crit2) { /* e(x+1/2,y-1) > 0 */
+			 y--, dyt += d2yt, t += dyt;
+			height++;
+		}
+		else {
+			if (ry*2+1 > height*2) {
+				draw_filled_rect(bbb, xc-rx, yc-ry, xc-rx + width, yc-ry + height);
+				draw_filled_rect(bbb, xc-rx, yc+ry+1, xc-rx + width, yc+ry+1-height);
+			}
+			else {
+				draw_filled_rect(bbb, xc-rx, yc-ry, xc-rx + width, yc-ry + ry*2+1);
+			}
+			x++, dxt += d2xt, t += dxt;
+			y--, dyt += d2yt, t += dyt;
+			rx++;
+			width += 2;
+			ry -= height;
+			height = 1;
+		}
+	}
+
+	if (ry > height) {
+		draw_filled_rect(bbb, xc-rx, yc-ry, xc-rx + width, yc-ry + height);
+		draw_filled_rect(bbb, xc-rx, yc+ry+1, xc-rx + width, yc+ry+1-height);
+	}
+	else {
+		draw_filled_rect(bbb,xc-rx, yc-ry, xc-rx + width, yc-ry + ry*2+1);
 	}
 }
 
