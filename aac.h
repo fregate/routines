@@ -291,4 +291,9 @@ void fill_ellipse_2(byte* bbb, int xc, int yc, int a, int b)
 	}
 }
 
+// check http://www.codeproject.com/Articles/16600/CTGraphics-Anti-Alias-C-Drawing
+// some filled curves.
+
+// change all to lines - no pixels?
+
 #endif
