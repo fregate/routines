@@ -173,6 +173,24 @@ struct CCC
 	}
 };
 
+void put_aa_pixel(byte* bbb, double x, double y)
+{
+	int x0 = int(x);
+	int x1 = x0 + 1;
+	int y0 = int(y);
+	int y1 = y0 + 1;
+
+	double weight_x1 = x - x0;
+	double weight_x0 = 1 - weight_x1;
+	double weight_y1 = y - y0;
+	double weight_y0 = 1 - weight_y1;
+
+	put_pixel(bbb, x0, y0, int((weight_x0 * weight_y0) * 255)); // change only opacity channel?
+	put_pixel(bbb, x1, y0, int((weight_x1 * weight_y0) * 255));
+	put_pixel(bbb, x0, y1, int((weight_x0 * weight_y1) * 255));
+	put_pixel(bbb, x1, y1, int((weight_x1 * weight_y1) * 255));
+}
+
 template<class T>
 void filled_rect(T* bbb, int x1, int y1, int x2, int y2, T val) // error = memset sets only (val & 0xff)
 {
