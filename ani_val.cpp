@@ -98,9 +98,13 @@ protected:
 		return false;
 	}
 
-	T period(const T& v1, const T& v2)
+	void normalize(T& v)
 	{
-		return max(v1, v2) - min(v1, v2);
+		if(v > v_max)
+			v -= (v_max - v_min);
+
+		if(v < v_min)
+			v += (v_max - v_min);
 	}
 
 public:
@@ -122,28 +126,26 @@ public:
 		// use dir
 		if(dir > 0)
 		{
-			if(cv_ < v_)
+			if(sv_ < v_)
 			{
 				cv_ = ef_(sv_, v_, cs_, s_);
 			}
 			else
 			{
-				cv_ = ef_(sv_, v_max + abs(v_), cs_, s_);
-				if(cv_ > v_max)
-					cv_ -= -v_min + v_max;
+				cv_ = ef_(sv_, v_ + (v_max - v_min), cs_, s_);
+				normalize(cv_);
 			}
 		}
 		else
 		{
-			if(cv_ > v_)
+			if(sv_ > v_)
 			{
 				cv_ = ef_(sv_, v_, cs_, s_);
 			}
 			else
 			{
-				cv_ = ef_(sv_, v_min - abs(v_), cs_, s_);
-				if(cv_ < v_min)
-					cv_ += -v_min + v_max;
+				cv_ = ef_(sv_, v_ - (v_max - v_min), cs_, s_);
+				normalize(cv_);
 			}		
 		}
 
@@ -176,18 +178,3 @@ public:
 		dir = d;
 	}
 };
-
-int main()
-{
- 	linear<double> le;
- 	aniv_c<double> c(5, 3, .1f, le, -10, 10);
-	c.set_direction(1);
- 	c.set(5);
-
-	while(!c.is_done())
-	{
-		c.step();
-	}
-
-	return 0;
-}
