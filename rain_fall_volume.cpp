@@ -31,6 +31,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	std::vector<unsigned int> vinput;
 	get_input(vinput);
 
+	size_t volume(0);
+	
 	if(vinput.empty() || vinput.size() == 1)
 	{
 		// volume = 0
@@ -41,22 +43,36 @@ int _tmain(int argc, _TCHAR* argv[])
 	size_t idxfwd(0), idxbwd(vis - 1);
 
 	std::vector<unsigned int> output;
-	output.resize(vis, UINT_MAX);
+	output.resize(vis, UINT_MAX); // initial value for array
 
 	unsigned int mvalfwd = vinput[idxfwd];
 	unsigned int mvalbwd = vinput[idxbwd];
 
+	unsigned s;
+
 	while(idxbwd)
 	{
 		// check forward iterators
-		output[idxfwd] = check_val(output[idxfwd], vinput[idxfwd], mvalfwd);
+		s = check_val(output[idxfwd], vinput[idxfwd], mvalfwd);
+		if(UINT_MAX != output[idxfwd]) // check with initial value!
+		{
+			volume += std::min(s, output[idxfwd]);
+		}
+		output[idxfwd] = s;
 		idxfwd++;
 
 		// check backward iterator
-		output[idxbwd] = check_val(output[idxbwd], vinput[idxbwd], mvalbwd);
+		s = check_val(output[idxbwd], vinput[idxbwd], mvalbwd);
+		if(UINT_MAX != output[idxbwd]) // check with initial value!
+		{
+			volume += std::min(s, output[idxbwd]);
+		}
+		output[idxbwd] = s;
 		idxbwd--;
 	}
 
+
 	// volume = sum of all elements in output
+	// volume contain value already!
 	return 0;
 }
