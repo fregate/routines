@@ -1,8 +1,6 @@
 // https://habrahabr.ru/post/276673/
 // c++ implementation
 // complexity O(n) - need to touch every node in tree
-// memory O(n) - on case this algo used maximum (H(k) + H(k-1)) items. n = sum(2^0, 2^k), H - number of items in k level of tree max 2^k
-// for this test tree it will be 3 + 2
 
 #include "stdafx.h"
 
@@ -72,6 +70,9 @@ int main()
 
 	// start with root set right sibling to all nodes
 
+// memory O(n) - on case this algo used maximum (H(k) + H(k-1)) items. n = sum(2^0, 2^k), H - number of items in k level of tree max 2^k
+// for this test tree it will be 3 + 2
+
 	node* nl = nullptr;
 
 	std::queue<node*>* qn(new std::queue<node*>); // current level
@@ -105,6 +106,44 @@ int main()
 		{
 			std::swap(qn, next);
 			nl = nullptr;
+		}
+	}
+
+// flawless solution
+// https://habrahabr.ru/post/276673/#comment_8765101
+// memory O(1)
+
+	{
+		node* x = root;
+
+		auto addNode = [](node* x, node* y, node* &s)
+		{
+			return (nullptr == s) ? (s = x) : (y->rs = x);
+			// if this is new level - set entry point, otherwise set previous (y) node right sibling
+			// return x (as last node checked - stores in y)
+		};
+
+		while (nullptr != x)
+		{
+			node* newStart = nullptr; // store level+1 entry point
+			node* y = nullptr; // store previous level+1 node
+
+			while (nullptr != x)
+			{
+				if (nullptr != x->left)
+				{
+					y = addNode(x->left, y, newStart);
+				}
+
+				if (nullptr != x->right)
+				{
+					y = addNode(x->right, y, newStart);
+				}
+
+				x = x->rs;
+			}
+
+			x = newStart;
 		}
 	}
 
