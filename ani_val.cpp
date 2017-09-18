@@ -84,7 +84,7 @@ public:
 	}
 };
 
-// class for circle animation. with range and direction
+// class for cyclic animation. with range and direction
 template<class T>
 class aniv_c : public aniv<T>
 {
