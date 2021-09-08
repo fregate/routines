@@ -1,0 +1,104 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "CMake debug",
+            "command": "cmake",
+            "args": [
+                "${workspaceFolder}/native-sdk",
+                "-G", "Ninja",
+                "-B", "${workspaceFolder}/../_build/${workspaceFolderBasename}",
+                "-DCMAKE_BUILD_TYPE=Debug",
+                "-DDGIS_SDK_BUILD_TOOLS=ON",
+                "-DDGIS_BUILD_HTTP_CURL=ON",
+                "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+            ],
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "dependsOn": [
+                "Remove configure cache"
+            ],
+            "group": "build"
+        },
+        {
+            "type": "shell",
+            "label": "CMake probe",
+            "command": "cmake",
+            "args": [
+                "${workspaceFolder}",
+                "-G", "Ninja",
+                "-B", "${workspaceFolder}/../_build/${workspaceFolderBasename}",
+                "-DCMAKE_BUILD_TYPE=Release",
+                "-DPROBE_ALL_SDK=ON",
+                "-DPROBE_Routing=ON",
+                "-DDGIS_ENABLE_PROBE=ON",
+                "-DPROBE_ENABLE_TRACY=ON",
+                "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+            ],
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "dependsOn": [
+                "Remove configure cache"
+            ],
+            "group": "build"
+        },
+        {
+            "type": "shell",
+            "label": "CMake release",
+            "command": "cmake",
+            "args": [
+                "${workspaceFolder}",
+                "-G", "Ninja",
+                "-B", "${workspaceFolder}/../_build/${workspaceFolderBasename}",
+                "-DCMAKE_BUILD_TYPE=Release",
+                "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+            ],
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "dependsOn": [
+                "Remove configure cache"
+            ],
+            "group": "build"
+        },
+        {
+            "type": "shell",
+            "label": "Remove configure cache",
+            "command": "rm",
+            "args": [
+                "-f",
+                "${workspaceFolder}/../_build/${workspaceFolderBasename}/CMakeCache.txt",
+                "${workspaceFolder}/../_build/${workspaceFolderBasename}/build.ninja"
+            ],
+            "group": "build"
+        },
+        {
+            "type": "shell",
+            "label": "Clean sheet",
+            "command": "rm",
+            "args": [
+                "-rf",
+                "${workspaceFolder}/../_build/${workspaceFolderBasename}"
+            ],
+            "group": "build"
+        },
+        {
+            "type": "shell",
+            "label": "Build",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/../_build/${workspaceFolderBasename}",
+                "--target", "OfflineFreeRoam_cli",
+                "-j", "15"
+            ],
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build"
+        }
+    ]
+}
