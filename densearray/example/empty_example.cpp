@@ -20,5 +20,10 @@ auto main() -> int
 
   ar.insert(1);
 
+  std::cout << std::boolalpha << "check 9 " << ar.check(9) <<  std::endl;
+  std::cout << std::boolalpha << "check 0 " << ar.check(0) << std::endl;
+  std::cout << std::boolalpha << "check 5 " << ar.check(5) <<  std::endl;
+  std::cout << std::boolalpha << "check 4 " << ar.check(4) <<  std::endl;
+
   return 0;
 }
