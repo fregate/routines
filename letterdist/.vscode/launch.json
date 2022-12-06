@@ -1,0 +1,30 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Debug rust executable",
+			"type": "lldb",
+			"request": "launch",
+			"cargo": {
+				"args": [
+					"build", "-r",
+					"--bin=letterdist",
+					"--package=letterdist"
+				],
+				"filter": {
+					"name": "letterdist",
+                    "kind": "bin"
+				}
+			},
+			"args": [
+				"-f", "jv.txt",
+				"-j", "10"
+			],
+			"cwd": "${workspaceFolder}"
+		  }
+		  
+	]
+}
