@@ -68,6 +68,9 @@ public:
         } else {
           const auto mut_it = items_.erase(it, it);
           mut_it->set(std::min(it->start(), value), std::max(it->end(), value));
+          merge(mut_it != items_.begin() ? std::prev(mut_it) : mut_it,
+                mut_it,
+                mut_it != items_.end() ? std::next(mut_it) : mut_it);
         }
       }
     } else {
@@ -76,12 +79,13 @@ public:
   }
 
   RangeType get_hole() const {
+    constexpr auto min_value = std::numeric_limits<RangeType>::min();
     if (items_.empty()) {
-      return std::numeric_limits<RangeType>::min();
+      return min_value;
     }
 
-    if (items_.begin()->start() != std::numeric_limits<RangeType>::min())
-      return std::numeric_limits<RangeType>::min();
+    if (items_.begin()->start() != min_value)
+      return min_value;
 
     return items_.begin()->end() + 1;
   }
@@ -106,7 +110,7 @@ private:
         std::partition_point(items_.begin(),
                          items_.end(),
           [val](const auto& item) -> bool {
-            return item.contains(val);
+            return item.compare(val) >= 0;
           });
 
     return it == items_.begin() ? it : std::prev(it);
