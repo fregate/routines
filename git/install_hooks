@@ -1,0 +1,8 @@
+#!/bin/bash
+
+MAIN=$(git rev-parse --show-toplevel)
+
+HOOKS=$MAIN/hooks/pre-commit
+
+
+cp -f $HOOKS $MAIN/.git/hooks/
