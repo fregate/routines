@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# When use C++/C, auto check style against defined .clang-format (in project root) in pre commit stage
+
+RET_CODE=0
+for FILE in $(git diff --name-only --cached | grep -E '\.cpp$|\.h$|\.c$')
+do
+        clang-format --dry-run -style=file:.clang-format -Werror $FILE
+        if [[ "$?" != "0" ]]; then
+                echo $?
+                RET_CODE=2
+        fi
+done
+
+[[ "$RET_CODE" != "0" ]] && echo "Have to run clang-format for files"
+
+exit $RET_CODE
