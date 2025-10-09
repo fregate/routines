@@ -3,7 +3,6 @@
 #include <memory>
 #include <span>
 #include <string>
-#include <tuple>
 #include <type_traits>
 #include <vector>
 
@@ -36,8 +35,21 @@ FORCE_INLINE uint64_t fmix64 ( uint64_t k )
 
 } // namespace mur
 
-using u128_t = std::tuple<std::uint64_t, std::uint64_t>;
-using raw128 = std::uint64_t[2];
+union b128_u
+{
+  std::uint64_t block[2];
+  std::uint8_t raw[16];
+};
+
+bool operator==(const b128_u & l, const b128_u & r)
+{
+  return std::memcmp(l.raw, r.raw, sizeof(b128_u)) == 0;
+}
+
+bool operator!=(const b128_u & l, const b128_u & r)
+{
+  return !(l == r);
+}
 
 template <class T>
 concept has_size = requires(T v) { v.size(); };
@@ -61,7 +73,8 @@ public:
   , offset_{0}
   {}
 
-  u128_t build() {
+  b128_u build() {
+    // murmur3 code
     constexpr uint64_t c1 = BIG_CONSTANT(0x87c37b91114253d5);
     constexpr uint64_t c2 = BIG_CONSTANT(0x4cf5ad432745937f);
 
@@ -74,14 +87,13 @@ public:
     const std::size_t nblocks = data_size_ / 16;
     for(std::size_t i = 0; i < nblocks; i++)
     {
-      auto [k1, k2] = getblocks(i);
+      fetch_blocks(i);
+      auto & k1 = buffer_.block[0];
+      auto & k2 = buffer_.block[1];
 
       k1 *= c1; k1  = ROTL64(k1,31); k1 *= c2; h1 ^= k1;
-
       h1 = ROTL64(h1,27); h1 += h2; h1 = h1*5+0x52dce729;
-
       k2 *= c2; k2  = ROTL64(k2,33); k2 *= c1; h2 ^= k2;
-
       h2 = ROTL64(h2,31); h2 += h1; h2 = h2*5+0x38495ab5;
     }
 
@@ -129,13 +141,15 @@ public:
     h1 += h2;
     h2 += h1;
 
-    return {h1, h2};
+    // murmur3 code
+
+    return b128_u{{h1, h2}};
   }
 
   template <typename N>
     requires std::is_arithmetic_v<N>
   MurCtx & hash(const N & num) {
-    overlaps_.push_back(std::span<const std::uint8_t>{
+    items_.push_back(std::span<const std::uint8_t>{
         reinterpret_cast<const std::uint8_t *>(&num), sizeof(N)});
     data_size_ += sizeof(N);
     return *this;
@@ -143,56 +157,48 @@ public:
 
   template <Container T>
   MurCtx & hash(const T & data) {
-    overlaps_.push_back(std::span<const std::uint8_t>{
+    items_.push_back(std::span<const std::uint8_t>{
         reinterpret_cast<const std::uint8_t *>(data.data()), data.size()});
     data_size_ += data.size();
     return *this;
   }
 
 private:
-  u128_t getblocks(std::size_t block_index)
+  void fetch_blocks(std::size_t block_index)
   {
-    constexpr std::size_t chunk_size = 16;
+    constexpr std::size_t chunk_size = sizeof(b128_u);
     std::size_t current_chunk_size{chunk_size};
     while (current_chunk_size != 0)
     {
-      const auto & ov = overlaps_[index_];
+      const auto & ov = items_[index_];
       const auto os = ov.size() - offset_;
       if (os > current_chunk_size) {
-        std::memcpy(&buffer_.raw[0] + chunk_size - current_chunk_size, &*(ov.begin() + offset_), current_chunk_size);
+        std::memcpy(&buffer_.raw[0] + chunk_size - current_chunk_size, ov.data() + offset_, current_chunk_size);
         offset_ += current_chunk_size;
-        return {buffer_.block_[0], buffer_.block_[1]};
+        return;
       } else {
-        std::memcpy(&buffer_.raw[0] + chunk_size - current_chunk_size, &*(ov.data() + offset_), os);
+        std::memcpy(&buffer_.raw[0] + chunk_size - current_chunk_size, ov.data() + offset_, os);
         current_chunk_size -= os;
         offset_ = 0;
         index_ += 1;
       }
     }
-    
-    return {buffer_.block_[0], buffer_.block_[1]};
   }
 
   std::span<const std::uint8_t> tail() const
   {
-    if (index_ >= overlaps_.size())
+    if (index_ >= items_.size())
       return {};
 
-    return overlaps_.back().subspan(offset_);
+    return items_.back().subspan(offset_);
   }
-
-  union d128
-  {
-    std::uint8_t raw[16];
-    std::uint64_t block_[2];
-  };
 
   std::uint32_t seed_;
   std::size_t data_size_;
-  d128 buffer_;
+  b128_u buffer_;
   std::size_t index_;
   std::size_t offset_;
-  std::vector<std::span<const std::uint8_t>> overlaps_;
+  std::vector<std::span<const std::uint8_t>> items_;
 };
 
 constexpr std::string str_data{"0123456789"};
@@ -214,7 +220,7 @@ int main() {
                         .hash(f32)
                         .build();
 
-  std::cout << "hash_all\n" << std::hex << std::get<0>(hash_all) << " " << std::get<1>(hash_all) << "\n";
+  std::cout << "hash_all\n" << std::hex << hash_all.block[0] << " " << hash_all.block[1] << "\n";
   constexpr auto data_size = sizeof(u8) + str_data.size() + sizeof(u16) + sizeof(u64) + sizeof(f64) + sizeof(f32);
   auto * all = new std::uint8_t[data_size];
   std::size_t offset{0};
@@ -224,49 +230,55 @@ int main() {
   std::memcpy(all + offset, str_data.data(), str_data.size()); offset += str_data.size();
   std::memcpy(all + offset, &u64, sizeof(u64)); offset += sizeof(u64);
   std::memcpy(all + offset, &f32, sizeof(f32)); offset += sizeof(f32);
-  raw128 mur;
-  MurmurHash3_x64_128(all, data_size, seed, mur);
-  std::cout << std::hex << mur[0] << " " << mur[1] << "\n";
+  b128_u mur;
+  MurmurHash3_x64_128(all, data_size, seed, mur.raw);
+  std::cout << std::hex << mur.block[0] << " " << mur.block[1] << "\n";
+  std::cout << "equal: " << std::boolalpha << (hash_all == mur) << "\n";
   delete [] all;
 
   {
     const auto chained_hash = MurCtx{seed}.hash(u8).build();
-    raw128 mur;
-    MurmurHash3_x64_128(&u8, sizeof(u8), seed, mur);
-    std::cout << "check u8\n" << std::hex << std::get<0>(chained_hash) << " " << std::get<1>(chained_hash) << "\n";
-    std::cout << std::hex << mur[0] << " " << mur[1] << "\n";
+    b128_u mur;
+    MurmurHash3_x64_128(&u8, sizeof(u8), seed, mur.raw);
+    std::cout << "check u8\n" << std::hex << chained_hash.block[0] << " " << chained_hash.block[1] << "\n";
+    std::cout << std::hex << mur.block[0] << " " << mur.block[1] << "\n";
+    std::cout << "equal: " << std::boolalpha << (chained_hash == mur) << "\n";
   }
 
   {
     const auto chained_hash = MurCtx{seed}.hash(u16).build();
-    raw128 mur;
-    MurmurHash3_x64_128(&u16, sizeof(u16), seed, mur);
-    std::cout << "check u16\n" << std::hex << std::get<0>(chained_hash) << " " << std::get<1>(chained_hash) << "\n";
-    std::cout << std::hex << mur[0] << " " << mur[1] << "\n";
+    b128_u mur;
+    MurmurHash3_x64_128(&u16, sizeof(u16), seed, mur.raw);
+    std::cout << "check u16\n" << std::hex << chained_hash.block[0] << " " << chained_hash.block[1] << "\n";
+    std::cout << std::hex << mur.block[0] << " " << mur.block[1] << "\n";
+    std::cout << "equal: " << std::boolalpha << (chained_hash == mur) << "\n";
   }
 
   {
     const auto chained_hash = MurCtx{seed}.hash(u64).build();
-    raw128 mur;
-    MurmurHash3_x64_128(&u64, sizeof(u64), seed, mur);
-    std::cout << "check u64\n" << std::hex << std::get<0>(chained_hash) << " " << std::get<1>(chained_hash) << "\n";
-    std::cout << std::hex << mur[0] << " " << mur[1] << "\n";
+    b128_u mur;
+    MurmurHash3_x64_128(&u64, sizeof(u64), seed, mur.raw);
+    std::cout << "check u64\n" << std::hex << chained_hash.block[0] << " " << chained_hash.block[1] << "\n";
+    std::cout << std::hex << mur.block[0] << " " << mur.block[1] << "\n";
+    std::cout << "equal: " << std::boolalpha << (chained_hash == mur) << "\n";
   }
 
   {
     const auto chained_hash = MurCtx{seed}.hash(f64).build();
-    raw128 mur;
-    MurmurHash3_x64_128(&f64, sizeof(f64), seed, mur);
-    std::cout << "check f64\n" << std::hex << std::get<0>(chained_hash) << " " << std::get<1>(chained_hash) << "\n";
-    std::cout << std::hex << mur[0] << " " << mur[1] << "\n";
+    b128_u mur;
+    MurmurHash3_x64_128(&f64, sizeof(f64), seed, mur.raw);
+    std::cout << "check f64\n" << std::hex << chained_hash.block[0] << " " << chained_hash.block[1] << "\n";
+    std::cout << std::hex << mur.block[0] << " " << mur.block[1] << "\n";
+    std::cout << "equal: " << std::boolalpha << (chained_hash == mur) << "\n";
   }
 
   {
     const auto chained_hash = MurCtx{seed}.hash(f32).build();
-    raw128 mur;
-    MurmurHash3_x64_128(&f32, sizeof(f32), seed, mur);
-    std::cout << "check f32\n" << std::hex << std::get<0>(chained_hash) << " " << std::get<1>(chained_hash) << "\n";
-    std::cout << std::hex << mur[0] << " " << mur[1] << "\n";
+    b128_u mur;
+    MurmurHash3_x64_128(&f32, sizeof(f32), seed, mur.raw);
+    std::cout << "check f32\n" << std::hex << chained_hash.block[0] << " " << chained_hash.block[1] << "\n";
+    std::cout << std::hex << mur.block[0] << " " << mur.block[1] << "\n";
+    std::cout << "equal: " << std::boolalpha << (chained_hash == mur) << "\n";
   }
 
   return 0;
